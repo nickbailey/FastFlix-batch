@@ -67,8 +67,6 @@ if j :
 
 # Convert the encoding commands' paths to run on the server
 
-print(exec_remote('ls'))
-
 for j in jobs :
     if args.list:
         print (f"\n{j['video_title']}\n==========================")
