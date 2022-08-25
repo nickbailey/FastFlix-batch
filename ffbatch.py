@@ -2,6 +2,7 @@ import os
 import yaml
 import argparse
 import subprocess
+import asyncio, asyncssh
 
 # Path where exported filesystems are mounted on the client
 mp_dflt = '/auto/hamlet'
@@ -35,50 +36,57 @@ clp.add_argument('queue', type=str,
 
 args = clp.parse_args()
 
-# Run a remote command on the server
-def exec_remote(cmd : str) -> (str, str, int) :
-    sp = subprocess.Popen(f'{args.sshcmd} {args.sshuser}@{args.sshhost} {cmd}',
-                          shell=True,
-                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    res, err = sp.communicate()
-    return (res.decode('utf-8'), err.decode('utf8'), sp.returncode)
+async def ssh_session() -> None :
+    async with asyncssh.connect(sshhost, username=sshuser) as conn:
+        result = await conn.run('ls abc', check=True)
+        yield (result.stdout, end='')
 
-# Read the whole of the named job queue from the yaml file.
-with open(args.queue, "r") as stream:
-    q = yaml.safe_load(stream)
+async def main() -> None :
+    # Run a remote command on the server
+    def exec_remote(cmd : str) -> (str, str, int) :
+        sp = subprocess.Popen(f'{args.sshcmd} {args.sshuser}@{args.sshhost} {cmd}',
+                            shell=True,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        res, err = sp.communicate()
+        return (res.decode('utf-8'), err.decode('utf8'), sp.returncode)
 
-# Extract video titles and encoding commands;
-# build a dictionary for each job.
-jobs = []
-for j in q['queue'] :
-    desc = {}
-    desc['video_title'] = j['video_settings']['video_title']
-    desc['encode_command'] = ' && '.join([ 
-        cc['command'] for cc in j['video_settings']['conversion_commands']
-    ])
-    ## TODO should check 0th attachment is the cover art path
-    try :
-        desc['cover'] = j['video_settings']['attachment_tracks'][0]['file_path']
-    except :
-        # Couldn't find cover attachment
-        desc['cover'] = None
-    jobs.append(desc)
+    # Read the whole of the named job queue from the yaml file.
+    with open(args.queue, "r") as stream:
+        q = yaml.safe_load(stream)
 
-# If there are any jobs to do, create a temp directory on the host to upload the cover art.
-if j :
-    r_tmpdir, r_errs, r_rc = exec_remote('mktemp --tmpdir FastFlix-covers.XXXXXX')
+    # Extract video titles and encoding commands;
+    # build a dictionary for each job.
+    jobs = []
+    for j in q['queue'] :
+        desc = {}
+        desc['video_title'] = j['video_settings']['video_title']
+        desc['encode_command'] = ' && '.join([ 
+            cc['command'] for cc in j['video_settings']['conversion_commands']
+        ])
+        ## TODO should check 0th attachment is the cover art path
+        try :
+            desc['cover'] = j['video_settings']['attachment_tracks'][0]['file_path']
+        except :
+            # Couldn't find cover attachment
+            desc['cover'] = None
+        jobs.append(desc)
 
-print(r_tmpdir, r_errs, r_rc)
+    # If there are any jobs to do, create a temp directory on the host to upload the cover art.
+    if j :
+        r_tmpdir, r_errs, r_rc = exec_remote('mktemp --tmpdir FastFlix-covers.XXXXXX')
 
-# Upload cover art
-cover_num = 0
+    print(r_tmpdir, r_errs, r_rc)
+
+    # Upload cover art
+    cover_num = 0
 
 
-# Convert the encoding commands' paths to run on the server
+    # Convert the encoding commands' paths to run on the server
 
-for j in jobs :
-    if args.list:
-        print (f"\n{j['video_title']}\n==========================")
-        print (f"{j['encode_command']}\n--------------------------")
-        print (f"Cover: {j['cover']}\n==========================")
+    for j in jobs :
+        if args.list:
+            print (f"\n{j['video_title']}\n==========================")
+            print (f"{j['encode_command']}\n--------------------------")
+            print (f"Cover: {j['cover']}\n==========================")
 
+asyncio.run(main())
