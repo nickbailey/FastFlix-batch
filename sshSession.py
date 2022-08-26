@@ -8,8 +8,8 @@ class sshSession :
         result = await self.conn.run(cmd)
         return result.stdout, result. stderr, result.exit_status
 
-async def main(host) :
-    rs = sshSession(await asyncssh.connect(host))
+async def main(host, **conn_args) :
+    rs = sshSession(await asyncssh.connect(host, **conn_args))
     print(f"{(await rs.cmd('whoami'))[0]}@{(await rs.cmd('hostname'))[0]}")
     print(await rs.cmd('ls'))
 
