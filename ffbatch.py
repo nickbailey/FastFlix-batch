@@ -67,18 +67,25 @@ async def main() -> None :
     sshargs = {}
     if args.sshuser :
         sshargs['username'] = args.sshuser
-    print(sshargs)
-    rs = sshSession(await asyncssh.connect(args.sshhost, **sshargs))
+    
+    ssh_con = await asyncssh.connect(args.sshhost, **sshargs)
+    rs = sshSession(ssh_con)
 
     # If there are any jobs to do, create a temp directory on the host to upload the cover art.
     if j :
-        r_tmpdir, r_errs, r_rc = await rs.cmd('mktemp --tmpdir FastFlix-covers.XXXXXX')
+        r_tmpdir, r_errs, r_rc = await rs.cmd('mktemp --tmpdir --directory FastFlix-covers.XXXXXX')
 
     print(r_tmpdir, r_errs, r_rc)
 
-    # Upload cover art
-    cover_num = 0
-
+    # Upload cover art, replacing paths in job commands
+    print ('Uploading cover graphics:')
+    for j in jobs :
+        if j['cover'] != None :
+            print (f"\t{j['video_title']}... ")
+            await asyncssh.scp(j['cover'], (ssh_con, r_tmpdir))
+            j['encode_command'] = j['encode_command'].replace(j['cover'], f"{r_tmpdir}/{os.path.basename(j['cover'])}")
+    print ('Done')
+    
     # Convert the encoding commands' paths to run on the server
 
 
