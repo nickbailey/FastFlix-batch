@@ -76,7 +76,7 @@ optional arguments:
  ### Finding out what's in the queue.
  
  Start up a terminal session on hamlet and type ``atq`` (or, if you have loads of queues,
- ``atq -q b``. By defaut ``batch`` jobs go in the ``b`` queue). For example:
+ ``atq -q b``. By default ``batch`` jobs go in the ``b`` queue). For example:
  
  ```
 nick@hamlet:~$ atq
