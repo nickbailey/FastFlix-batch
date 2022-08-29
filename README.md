@@ -32,7 +32,7 @@ is already done. Only the following needs to be fixed up:
  * If you've put a cover picture in your video file, FastFlix is going to extract
  it prior to encoding and place it in a system-dependent place with a unique (and long) name.
  If any such files are referenced in the job list, a temporary directory
- will be created on ophelia, and all such files copied to it. The encode commands
+ will be created on hamlet, and all such files copied to it. The encode commands
  will of course be adjusted to refer to these files.
  * Each job will be set running using the ``batch`` command. This means they will only
  start when hamlet hasn't much better to do.
