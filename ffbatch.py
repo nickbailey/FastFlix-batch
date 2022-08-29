@@ -1,7 +1,6 @@
 import os
 import yaml
 import argparse
-import subprocess
 import asyncio, asyncssh
 from sshSession import sshSession
 
