@@ -5,21 +5,25 @@ import subprocess
 import asyncio, asyncssh
 from sshSession import sshSession
 
+# SITE CUSTOMISATION
+# Change the following if you don't like typing lots of
+# command-line options.
+
 # Path where exported filesystems are mounted on the client
 mp_dflt = '/auto/hamlet/'
 
 # Path of the exported filesystem appearing at the above mount point
 export_dflt = '/export/'
 
-# Default local ssh command etc to run commands on the remote machine
+# Default host on which to perform the encoding
 ssh_host_dflt = 'hamlet'
 
 # The command run on the server to make a temporary directory and
 # return its name
 mktmp_cmd = 'mktemp --tmpdir --directory FastFlix-covers.XXXXXX'
+# END OF SITE CUSTOMISATION
 
-
-# Use clp to parse the command line
+# Use clp to parse the command line before anything else happens.
 clp = argparse.ArgumentParser(
     description='Submit FastFlix commands as batch jobs.'
 )
@@ -32,9 +36,9 @@ clp.add_argument('--list', action='store_true',
                  help='''List all jobs read before starting''')
 clp.add_argument('--dry-run', action='store_true',
                  help='''Don't actually submit
-                             jobs to the batch server's batch queue.
-                             Print the job which would have been submitted
-                             instead''')
+                         jobs to the batch server's batch queue.
+                         Print the job which would have been submitted
+                         instead''')
 clp.add_argument('--ssh-user', type=str,
 		 help='''Login name of account on remote machine''')
 clp.add_argument('--ssh-host', type=str, default=ssh_host_dflt,
@@ -116,6 +120,5 @@ async def main() -> None :
             else :
                 await rs.cmd(batch_cmd)
     print('Done')
-
 
 asyncio.run(main())
