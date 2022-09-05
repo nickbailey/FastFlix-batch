@@ -16,7 +16,7 @@ ssh_host_dflt = 'hamlet'
 
 # The command run on the server to make a temporary directory and
 # return its name
-mktmp_cmd = 'mktemp --tmpdir --directory FastFlix-covers.XXXXXX'
+mktmp_cmd = 'mktemp --tmpdir --directory FastFlix-attachments.XXXXXX'
 
 
 # Use clp to parse the command line
@@ -59,12 +59,10 @@ async def main() -> None :
         desc['encode_command'] = ' && '.join([ 
             cc['command'] for cc in j['video_settings']['conversion_commands']
         ])
-        ## TODO should check 0th attachment is the cover art path
-        try :
-            desc['cover'] = j['video_settings']['attachment_tracks'][0]['file_path']
-        except :
-            # Couldn't find cover attachment
-            desc['cover'] = None
+        ## TODO should check this will always send the attachment
+        ## which is the cover art path
+        desc['cover'] = [ attachment['file_path']
+                            for attachment in j['video_settings']['attachment_tracks'] ]
         jobs.append(desc)
 
     if args.list > 0:
@@ -95,13 +93,13 @@ async def main() -> None :
     # Upload cover art, replacing paths in job commands
     print ('Uploading cover graphics:')
     for j in jobs :
-        if j['cover'] != None :
+        for attachment in j['cover'] :
             print (f"\t{j['video_title']}... ")
             if args.dry_run :
-                print (f"\tCopy: {j['cover']} -> {args.ssh_host}:{r_tmpdir}")
+                print (f"\tCopy: {attachment} -> {args.ssh_host}:{r_tmpdir}")
             else :
-                await asyncssh.scp(j['cover'], (ssh_con, r_tmpdir))
-            j['encode_command'] = j['encode_command'].replace(j['cover'], f"{r_tmpdir}/{os.path.basename(j['cover'])}")
+                await asyncssh.scp(attachment, (ssh_con, r_tmpdir))
+            j['encode_command'] = j['encode_command'].replace(attachment, f"{r_tmpdir}/{os.path.basename(attachment)}")
     print ('Done')
     
     # Convert the encoding commands' paths to run on the server
