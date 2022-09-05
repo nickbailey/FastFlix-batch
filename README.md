@@ -90,7 +90,7 @@ nick@hamlet:~$ atq
  ### Tidying up
  
  ``ffbatch`` doesn't (deliberately) delete anything. You'll maybe want to delete
- the directory ``/tmp/FastFlix-covers*`` after all batch jobs complete, which will
+ the directory ``/tmp/FastFlix-attachments*`` after all batch jobs complete, which will
  have copies of the cover graphics in it, now included in the encoded files. They
  typically aren't very big, so if you don't bother, that's fine. They'll disappear
  at the next reboot.
