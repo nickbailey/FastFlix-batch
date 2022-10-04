@@ -2,7 +2,6 @@ import os
 import yaml
 import argparse
 import asyncio, asyncssh
-from sshSession import sshSession
 
 # SITE CUSTOMISATION
 # Change the following if you don't like typing lots of
