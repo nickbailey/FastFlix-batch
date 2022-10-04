@@ -106,12 +106,6 @@ async def main() -> None :
     print('Done')
 
 if __name__ == '__main__' :
-    import sys
-    if len(sys.argv) == 2:
-        asyncio.run(main(sys.argv[1]))
-    else:
-        print (f'No host specified. Will use {ssh_host_dflt}')
-
     # Use clp to parse the command line before anything else happens.
     clp = argparse.ArgumentParser(
         description='Submit FastFlix commands as batch jobs.'
