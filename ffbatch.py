@@ -22,30 +22,18 @@ ssh_host_dflt = 'hamlet'
 mktmp_cmd = 'mktemp --tmpdir --directory FastFlix-attachments.XXXXXX'
 # END OF SITE CUSTOMISATION
 
-# Use clp to parse the command line before anything else happens.
-clp = argparse.ArgumentParser(
-    description='Submit FastFlix commands as batch jobs.'
-)
-clp.add_argument('--mountpoint', type=str, default=mp_dflt,
-                 help='''Path where the filesystem exported by the media server'
-                         appears on the desktop client''')
-clp.add_argument('--export', type=str, default=export_dflt,
-                 help='''Path exported by the media server to the client''')
-clp.add_argument('--list', action='store_true',
-                 help='''List all jobs read before starting''')
-clp.add_argument('--dry-run', action='store_true',
-                 help='''Don't actually submit
-                         jobs to the batch server's batch queue.
-                         Print the job which would have been submitted
-                         instead''')
-clp.add_argument('--ssh-user', type=str,
-		 help='''Login name of account on remote machine''')
-clp.add_argument('--ssh-host', type=str, default=ssh_host_dflt,
-		 help='''Remote host which will be running the encoding jobs''')
-clp.add_argument('queue', type=str,
-                 help='''YAML file containing the exported FastFlix job list''')
+class sshSession :
+    def __init__(self, conn : asyncssh.SSHClientConnection) :
+        self.conn = conn
+        
+    async def cmd(self, cmd : str) -> (str, str, int) :
+        result = await self.conn.run(cmd)
+        return result.stdout, result. stderr, result.exit_status
 
-args = clp.parse_args()
+async def main(host, **conn_args) :
+    rs = sshSession(await asyncssh.connect(host, **conn_args))
+    print(f"{(await rs.cmd('whoami'))[0]}@{(await rs.cmd('hostname'))[0]}")
+    print(await rs.cmd('ls'))
 
 async def main() -> None :
 
@@ -118,4 +106,36 @@ async def main() -> None :
                 await rs.cmd(batch_cmd)
     print('Done')
 
-asyncio.run(main())
+if __name__ == '__main__' :
+    import sys
+    if len(sys.argv) == 2:
+        asyncio.run(main(sys.argv[1]))
+    else:
+        print (f'No host specified. Will use {ssh_host_dflt}')
+
+    # Use clp to parse the command line before anything else happens.
+    clp = argparse.ArgumentParser(
+        description='Submit FastFlix commands as batch jobs.'
+    )
+    clp.add_argument('--mountpoint', type=str, default=mp_dflt,
+                    help='''Path where the filesystem exported by the media server'
+                            appears on the desktop client''')
+    clp.add_argument('--export', type=str, default=export_dflt,
+                    help='''Path exported by the media server to the client''')
+    clp.add_argument('--list', action='store_true',
+                    help='''List all jobs read before starting''')
+    clp.add_argument('--dry-run', action='store_true',
+                    help='''Don't actually submit
+                            jobs to the batch server's batch queue.
+                            Print the job which would have been submitted
+                            instead''')
+    clp.add_argument('--ssh-user', type=str,
+                    help='''Login name of account on remote machine''')
+    clp.add_argument('--ssh-host', type=str, default=ssh_host_dflt,
+                    help='''Remote host which will be running the encoding jobs''')
+    clp.add_argument('queue', type=str,
+                    help='''YAML file containing the exported FastFlix job list''')
+
+    args = clp.parse_args()
+
+    asyncio.run(main())
